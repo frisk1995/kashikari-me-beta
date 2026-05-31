@@ -1,3 +1,12 @@
 .aidesigner/*
 !.aidesigner/.gitkeep
 .playwright-mcp/
+
+# Expo / Node
+node_modules/
+.expo/
+dist/
+web-build/
+*.log
+.DS_Store
+expo-env.d.ts

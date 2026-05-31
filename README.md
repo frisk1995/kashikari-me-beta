@@ -1,118 +1,130 @@
-# harness
+# Kashikari.me
 
-Claude Code のサブエージェント機能を使った自動開発パイプライン。短いプロダクトアイデアを入力するだけで、企画 → デザイン → 実装 → 検証のサイクルが自動で回り続ける。
+旅行・日常での立て替えを記録し、「誰が誰にいくら払えばよいか」を提示する iPhone 向けアプリ。
 
 ## 概要
 
-```
-あなた（1〜4行のアイデア）
-    ↓
-Planner  ── /docs/spec.md を生成
-    ↓
-UIDesigner（提案モード） ── 2〜3パターンのデザイン案を生成・プレビュー
-    ↓
-あなた（デザイン案を選択・承認）
-    ↓
-UIDesigner（確定モード） ── /docs/design.md にデザイン仕様を記録
-    ↓
-Generator ── スプリント単位で実装 ── /docs/progress.md に記録
-    ↓
-Evaluator ── Playwright で実動作テスト ── /docs/feedback/sprint-N.md に結果出力
-    ↓ 合格
-次のスプリントへ（Generator に戻る）
-    ↓ 不合格
-Generator に差し戻し（修正後に再テスト）
-```
+- アカウント登録不要、オフライン完結
+- 「貸した人」「借りた人」を選ぶだけのシンプルな記録
+- 精算案は直接の貸し借りペアごとに計算（三角精算なし）
+- テーマカラーを設定画面から切り替え可能
 
-## エージェント
+## 起動方法
 
-| エージェント | 役割 | モデル |
-|---|---|---|
-| **Planner** | アイデアを製品仕様書（`/docs/spec.md`）に展開する | Opus |
-| **UIDesigner** | AIDesigner MCP でデザイン案を生成し、ユーザー承認後に `/docs/design.md` を確定する | Opus |
-| **Generator** | 仕様書・デザイン仕様を読み、1スプリントずつ実装する | Opus |
-| **Evaluator** | Playwright MCP でアプリを実際に動かしてテストする | Opus |
+```bash
+# 依存インストール（初回のみ）
+npm install
 
-## 使い方
+# Expo Go（実機・シミュレータ）
+npx expo start
 
-### 1. 新しいプロジェクトを始める
+# iOS シミュレータ直接起動
+npx expo start --ios
 
-Claude Code を起動し、Planner エージェントにアイデアを渡す：
-
-```
-planner エージェントを使って以下のアイデアを仕様書にしてください：
-「シンプルなタスク管理アプリ。チームで共有できて、期限と優先度を設定できる」
+# Web ブラウザ
+npx expo start --web
 ```
 
-### 2. デザイン案を生成・承認する
+**テスト URL（Web）:** `http://localhost:8081`
 
-Planner が `/docs/spec.md` を生成したら、UIDesigner に提案を依頼する：
+## 技術スタック
+
+| 項目 | 内容 |
+|------|------|
+| フレームワーク | Expo SDK 54 / React Native 0.81 |
+| ルーティング | expo-router v6（file-based） |
+| 言語 | TypeScript |
+| 永続化 | AsyncStorage（`kashikari.me/appData`） |
+| スタイリング | React Native StyleSheet（グラデーションなし・フラット） |
+| フォント | Noto Sans JP / Baloo 2 |
+| アイコン | @expo/vector-icons（Ionicons） |
+
+## 主要機能
+
+### グループ管理
+- グループの作成・編集・削除
+- メンバーの追加・編集・削除
+
+### 支払い記録（貸し借り）
+- 貸した人・借りた人・金額・用途・日付を記録
+- 貸した人を選ぶと借りた人の選択肢から自動除外
+- 借りた人はデフォルト未選択
+
+### 精算
+- **支払いタブ**: 未精算の貸し借り一覧
+- **精算タブ**: 直接ペアベースの精算案（「A が B に ¥X,XXX 払う」形式）
+- **精算済みタブ**: 「まとめて精算する」後の履歴
+- 精算結果のテキスト共有・コピー
+
+### テーマ切り替え
+設定画面（ホーム右上の歯車アイコン）から選択可能：
+
+| テーマ | 説明 |
+|--------|------|
+| グリーン | パステルミントグリーン |
+| ブルー | インディゴブルー |
+| ライト | チャコール×グレーのモノトーン |
+| ダーク | ブラックベースのモノトーン |
+| コーラル | デフォルト |
+
+## ディレクトリ構成
 
 ```
-ui-designer エージェントでデザイン案を提案してください
-```
+app/                    # expo-router 画面
+  index.tsx             # グループ一覧（ホーム）
+  settings.tsx          # 設定（テーマ切り替え）
+  group/
+    new.tsx             # グループ作成
+    [id]/
+      index.tsx         # グループ詳細（支払い・精算・精算済みタブ）
+      edit.tsx          # グループ編集・削除
+      payment/
+        new.tsx         # 支払い追加
+        [paymentId]/edit.tsx  # 支払い編集・削除
 
-UIDesigner が 2〜3パターンのデザインをプレビュー表示する。気に入った案を選んで確定する：
+src/
+  types/index.ts        # 型定義（Group, Member, Payment, Transfer）
+  storage/index.ts      # AsyncStorage ラッパー（CRUD・精算済み一括処理）
+  context/
+    ThemeContext.tsx    # テーマ Context（useTheme フック）
+  theme.ts              # デザイントークン・5テーマ定義
+  utils/
+    settlement.ts       # 精算計算（直接ペアベースアルゴリズム）
+    share.ts            # 精算結果テキスト共有
+    confirm.ts          # 破壊的操作の確認ダイアログ（Web/native 分岐）
+    categories.ts       # （廃止済み）
+  components/           # 共通コンポーネント
 
-```
-ui-designer エージェントで案Bを確定してください
-（修正がある場合）案Aをベースに、カラーをダーク系に変更して確定してください
-```
-
-### 3. 実装・検証を繰り返す
-
-デザインが確定したら Generator でスプリントを実装する：
-
-```
-generator エージェントでスプリント 1 を実装してください
-```
-
-Generator の実装が終わったら Evaluator でテストする：
-
-```
-evaluator エージェントでスプリント 1 を評価してください
-```
-
-合格後は Generator → Evaluator を繰り返す。
-
-### 4. ファイル構成（自動生成）
-
-```
 docs/
-  spec.md               # Planner が生成する製品仕様書
-  design.md             # UIDesigner が確定するデザイン仕様書
-  progress.md           # Generator が記録する実装進捗
-  feedback/
-    sprint-1.md         # Evaluator が出力する評価結果
-    sprint-2.md
-    ...
-.aidesigner/
-  proposals.json        # UIDesigner が提案モードで保存するデザイン案一覧
-  runs/                 # AIDesigner が生成した HTML アーティファクト
+  spec.md               # 製品仕様書（Planner 生成）
+  design.md             # デザイン仕様書（UIDesigner 確定）
+  progress.md           # 実装進捗（Generator 記録）
+  decisions.md          # 仕様変更・設計判断の記録
+  feedback/             # スプリント評価結果（Evaluator 出力）
 ```
 
-## 評価基準
+## データ構造
 
-| 基準 | 合格閾値 |
-|---|---|
-| 機能完全性 | 4/5 以上 |
-| 動作安定性 | 4/5 以上 |
-| UI/UX品質 | 3/5 以上 |
-| エラーハンドリング | 3/5 以上 |
-| 回帰なし | 5/5（必須） |
-| デザイン仕様適合 | 3/5 以上（`design.md` がない場合は評価対象外） |
+```typescript
+interface Group {
+  id: string;
+  name: string;
+  members: Member[];
+  payments: Payment[];
+}
 
-1つでも閾値を下回ればスプリント不合格、Generator に自動差し戻し。
+interface Payment {
+  id: string;
+  amount: number;
+  lenderId: string;      // 貸した人
+  borrowerIds: string[]; // 借りた人（複数可）
+  memo: string;
+  date: string;          // YYYY-MM-DD
+  createdAt: number;
+  settled: boolean;      // true = 精算済み
+}
+```
 
-## 必要な MCP サーバ
+## 開発パイプライン
 
-- **AIDesigner MCP** — UIDesigner がデザイン生成に使用（`.mcp.json` に設定済み）
-- **Playwright MCP** — Evaluator がブラウザ操作テストに使用（`.claude/agents/evaluator.md` に設定済み）
-
-## 絶対ルール
-
-- **Planner は実装しない。UIDesigner はコードを書かない。Generator は仕様・デザインを変更しない。Evaluator はコードを修正しない。**
-- スプリントは Sprint 1 → 2 → 3 の順に実装する（スキップ禁止）。
-- **ユーザーがデザインを承認してから Generator を起動する。**
-- 各スプリント完了時にアプリが正常に起動・動作していること。
-- Generator は新スプリント着手前に、前スプリントの不合格フィードバックを先に修正する。
+このプロジェクトは Planner → UIDesigner → Generator → Evaluator の4エージェントによる自動開発パイプラインで構築されました。詳細は `CLAUDE.md` を参照。

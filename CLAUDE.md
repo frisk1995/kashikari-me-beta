@@ -90,3 +90,33 @@ Planner ──→ UIDesigner ──→ Generator ──→ Evaluator
 4. **フィードバックを最優先で処理する** - Generator は新スプリント着手前に、前スプリントの不合格フィードバックを修正すること。
 5. **起動手順を必ず記載する** - Generator は `/docs/progress.md` にアプリの起動コマンドを毎回明記する。Evaluator はそれに従って起動する。
 6. **デザイン承認なしで Generator を起動しない** - UIDesigner 確定モードが完了し `/docs/design.md` が存在するか、またはユーザーがデザインスキップを明示した場合にのみ Generator を呼び出す。
+
+---
+
+## アプリ固有の制約（Kashikari.me）
+
+以下は本プロジェクト（かしかり.me / Kashikari.me）に固有のルール。
+仕様変更・設計判断の詳細は `/docs/decisions.md` を参照。
+
+### データモデル
+- 支払いモデルは「貸した人（lenderId）＋借りた人（borrowerIds[]）」。カテゴリ・割り勘モードは廃止済み。
+- `Payment.settled: boolean` で未精算・精算済みを管理する。
+
+### UI ルール
+- **グラデーションは使わない** - ヘッダー・ボタン・FABはソリッドカラーのみ
+- **テーマは ThemeContext 経由** - `colors` を直接 import せず `useTheme()` フックを使う
+- **借りた人のデフォルトは未選択** - 「全員」ボタンは使用しない
+- グループ一覧・詳細の金額表示は「未精算金額」（`settled: false` の合計）、1人あたりは表示しない
+
+### 精算アルゴリズム
+- 直接ペアベース（`computeDirectTransfers`）を使う
+- greedy min-transfers（三角精算）は使わない
+
+### 起動・テスト
+- Web テスト: `npx expo start --web` → `http://localhost:8081`
+- iOS テスト: `npx expo start --ios`（Xcode 26.5 / iPhone 17 シミュレータ）
+- Expo Go: SDK 54 対応版を使用
+
+### SafeArea
+- `SafeAreaProvider` には必ず `initialMetrics={initialWindowMetrics}` を渡す
+- ヘッダーの `paddingTop` は `insets.top + N`（N は画面ごとに調整）
