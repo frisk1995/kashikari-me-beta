@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>かしかり.me</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: #FFF8F2;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 40px 32px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    .logo {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #FF6B35;
+      margin-bottom: 8px;
+      letter-spacing: 0.04em;
+    }
+    .tagline {
+      font-size: 1rem;
+      color: #777;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    .description {
+      font-size: 0.95rem;
+      color: #555;
+      line-height: 1.8;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .link-btn {
+      display: block;
+      padding: 14px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .link-btn:hover { opacity: 0.82; }
+    .link-primary {
+      background: #FF6B35;
+      color: #fff;
+    }
+    .link-secondary {
+      background: #f3f3f3;
+      color: #444;
+    }
+    footer {
+      margin-top: 32px;
+      font-size: 0.8rem;
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">かしかり.me</div>
+    <p class="tagline">割り勘・立て替えをかんたん精算</p>
+
+    <p class="description">
+      旅行や飲み会での立て替えを記録し、誰が誰にいくら払えばよいかを自動で計算します。
+      アカウント登録不要・完全オフラインで、サッと使えるシンプルな精算アプリです。
+    </p>
+
+    <div class="links">
+      <a class="link-btn link-primary" href="privacy-policy.html">プライバシーポリシー</a>
+      <a class="link-btn link-secondary" href="mailto:toshiki.priv@gmail.com">お問い合わせ</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 かしかり.me. All rights reserved.</p>
+  </footer>
+</body>
+</html>

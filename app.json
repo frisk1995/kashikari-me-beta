@@ -14,14 +14,16 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "me.kashikari.beta"
+      "bundleIdentifier": "me.kashikari.beta",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFF8F2"
       },
-      "package": "me.kashikari.beta"
+      "package": "me.kashikari.beta",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
