@@ -10,6 +10,24 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 
 const USER_ID_KEY = 'kashikari.me/userId';
+const USERNAME_KEY = 'kashikari.me/username';
+
+/** 保存済みユーザー名を返す。未設定なら null。 */
+export async function getUsername(): Promise<string | null> {
+  return AsyncStorage.getItem(USERNAME_KEY);
+}
+
+/** ユーザー名を保存し、Firestore の users/{id} も更新する。 */
+export async function saveUsername(userId: string, name: string): Promise<void> {
+  await AsyncStorage.setItem(USERNAME_KEY, name);
+  if (db) {
+    try {
+      await setDoc(doc(db, 'users', userId), { username: name, updatedAt: serverTimestamp() }, { merge: true });
+    } catch (e) {
+      console.warn('[userId] failed to update username in Firestore', e);
+    }
+  }
+}
 
 /** RFC 4122 v4 UUID を純粋 JS で生成（ネイティブモジュール不要） */
 function generateUuid(): string {

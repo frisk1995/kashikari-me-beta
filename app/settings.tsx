@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, Clipboard, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
@@ -7,6 +7,7 @@ import Constants from 'expo-constants';
 import { SubHeader } from '@/components/Header';
 import { ColorPalette, fonts, radius, spacing, themes, ThemeId } from '@/theme';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/context/UserContext';
 
 /** テーマ選択カードの表示定義（順序は spec の通り） */
 const THEME_OPTIONS: { id: ThemeId; label: string }[] = [
@@ -45,6 +46,15 @@ const openMail = () => {
 export default function SettingsScreen() {
   const { colors, themeId, shadows, setTheme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { userId, username, setUsername } = useUser();
+  const [copied, setCopied] = useState(false);
+
+  const copyUserId = () => {
+    if (!userId) return;
+    Clipboard.setString(userId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <View style={styles.screen}>
@@ -55,7 +65,60 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionLabel}>テーマカラー</Text>
+        {/* ユーザー情報 */}
+        <Text style={styles.sectionLabel}>ユーザー情報</Text>
+
+        {/* ユーザー名 */}
+        <View style={[styles.row, shadows.card]}>
+          <View style={styles.rowIcon}>
+            <Ionicons name="person-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>ユーザー名</Text>
+            <Text style={styles.rowValueSub} numberOfLines={1}>{username ?? '—'}</Text>
+          </View>
+          <Pressable
+            onPress={() => Alert.prompt(
+              'ユーザー名を変更',
+              '新しいユーザー名（20文字以内）',
+              async (newName) => {
+                const trimmed = (newName ?? '').trim();
+                if (!trimmed || trimmed.length > 20) return;
+                try { await setUsername(trimmed); } catch {}
+              },
+              'plain-text',
+              username ?? '',
+            )}
+            hitSlop={8}
+          >
+            <Ionicons name="pencil-outline" size={18} color={colors.textSub} />
+          </Pressable>
+        </View>
+
+        {/* UUID */}
+        <Pressable
+          onPress={copyUserId}
+          style={({ pressed }) => [styles.row, shadows.card, { opacity: pressed ? 0.85 : 1 }]}
+          accessibilityLabel="ユーザーIDをコピー"
+        >
+          <View style={styles.rowIcon}>
+            <Ionicons name="key-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowLabel}>ユーザーID</Text>
+            <Text style={styles.rowValueSub} numberOfLines={1}>
+              {userId ? userId : '—'}
+            </Text>
+          </View>
+          <Ionicons
+            name={copied ? 'checkmark-outline' : 'copy-outline'}
+            size={18}
+            color={copied ? colors.success : colors.textSub}
+          />
+        </Pressable>
+
+        {/* テーマカラー */}
+        <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>テーマカラー</Text>
         <Text style={styles.sectionSub}>アプリ全体の配色を選べます</Text>
 
         {THEME_OPTIONS.map((opt) => {
@@ -283,10 +346,11 @@ function makeStyles(c: ColorPalette) {
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      height: 52,
+      minHeight: 52,
       backgroundColor: c.surface,
       borderRadius: radius.card,
       paddingHorizontal: spacing.lg,
+      paddingVertical: 10,
       marginBottom: spacing.sm,
     },
     rowIcon: {
@@ -295,12 +359,21 @@ function makeStyles(c: ColorPalette) {
       justifyContent: 'center',
       marginRight: spacing.md,
     },
-    rowLabel: {
+    rowBody: {
       flex: 1,
+      justifyContent: 'center',
+    },
+    rowLabel: {
       fontFamily: fonts.jp700,
       fontSize: 15,
       fontWeight: '700',
       color: c.text,
+    },
+    rowValueSub: {
+      fontFamily: fonts.jp500,
+      fontSize: 11,
+      color: c.textSub,
+      marginTop: 2,
     },
     rowValue: {
       fontFamily: fonts.jp500,

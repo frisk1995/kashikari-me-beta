@@ -1,56 +1,74 @@
 /**
- * 端末ごとの匿名ユーザーID（UUID）を提供する Context。
- *
- * 起動時に `getOrCreateUserId()` でID を取得・生成し、子コンポーネントへ配布する。
- * ID 取得中は `userId` が null、`loading` が true になる。
+ * 端末ごとの匿名ユーザーID・ユーザー名を提供する Context。
  */
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
-import { getOrCreateUserId } from '@/storage/userId';
+import { getOrCreateUserId, getUsername, saveUsername } from '@/storage/userId';
 
 interface UserContextValue {
-  /** 端末の匿名ユーザーID。取得前は null。 */
   userId: string | null;
-  /** ID 取得中フラグ */
+  username: string | null;
+  /** ユーザー名が設定済みかどうか（オンボーディング完了判定） */
+  hasOnboarded: boolean;
   loading: boolean;
+  setUsername: (name: string) => Promise<void>;
 }
 
-const UserContext = createContext<UserContextValue>({ userId: null, loading: true });
+const UserContext = createContext<UserContextValue>({
+  userId: null,
+  username: null,
+  hasOnboarded: false,
+  loading: true,
+  setUsername: async () => {},
+});
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
+  const [username, setUsernameState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    getOrCreateUserId()
-      .then((id) => {
+    (async () => {
+      try {
+        const [id, name] = await Promise.all([getOrCreateUserId(), getUsername()]);
         if (active) {
           setUserId(id);
-          setLoading(false);
+          setUsernameState(name);
         }
-      })
-      .catch((e) => {
-        console.warn('[UserContext] failed to get/create userId', e);
+      } catch (e) {
+        console.warn('[UserContext] init error', e);
+      } finally {
         if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
-  const value = useMemo(() => ({ userId, loading }), [userId, loading]);
+  const setUsername = useCallback(async (name: string) => {
+    if (!userId) return;
+    await saveUsername(userId, name);
+    setUsernameState(name);
+  }, [userId]);
+
+  const value = useMemo(() => ({
+    userId,
+    username,
+    hasOnboarded: !!username,
+    loading,
+    setUsername,
+  }), [userId, username, loading, setUsername]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
-/** userId と loading を取得するフック */
 export function useUser(): UserContextValue {
   return useContext(UserContext);
 }

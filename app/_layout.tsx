@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -17,13 +17,22 @@ import {
   Baloo2_800ExtraBold,
 } from '@expo-google-fonts/baloo-2';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
-import { UserProvider } from '@/context/UserContext';
+import { UserProvider, useUser } from '@/context/UserContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 /** テーマに追従する画面スタック（背景色・StatusBar の明暗をテーマから決定する） */
 function ThemedStack() {
   const { colors, isDark } = useTheme();
+  const { hasOnboarded, loading } = useUser();
+
+  // ユーザー情報ロード完了後、未オンボードならオンボーディング画面へ
+  useEffect(() => {
+    if (!loading && !hasOnboarded) {
+      router.replace('/onboarding');
+    }
+  }, [loading, hasOnboarded]);
+
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'light'} />
@@ -32,9 +41,9 @@ function ThemedStack() {
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: colors.bg },
-
           }}
         >
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="index" />
           <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
           <Stack.Screen name="group/new" options={{ presentation: 'modal' }} />
