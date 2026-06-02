@@ -34,7 +34,7 @@
 | 項目 | 値 |
 |------|-----|
 | 開発者名 | Toshiki Kojima |
-| メールアドレス | toshiki.priv@gmail.com |
+| メールアドレス | kashikari.me.26@gmail.com |
 | サポートURL | https://frisk1995.github.io/kashikari-me-beta/ |
 | プライバシーポリシーURL | https://frisk1995.github.io/kashikari-me-beta/privacy-policy.html |
 | マーケティングURL | https://frisk1995.github.io/kashikari-me-beta/ |
