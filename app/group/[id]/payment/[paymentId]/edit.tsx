@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { PaymentForm, PaymentFormInitial } from '@/components/PaymentForm';
 import { SubHeader } from '@/components/Header';
-import { deletePayment, getGroup, getPayment, updatePayment } from '@/storage';
-import type { PaymentInput } from '@/storage';
+import { deletePayment, getGroup, getPayment, updatePayment } from '@/storage/firestore';
+import type { PaymentInput } from '@/storage/firestore';
 import type { Group } from '@/types';
 import { confirmDestructive } from '@/utils/confirm';
 import { ColorPalette, fonts } from '@/theme';
@@ -19,15 +19,15 @@ export default function EditPaymentScreen() {
   const [loaded, setLoaded] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      if (!id || !paymentId) {
-        setNotFound(true);
-        setLoaded(true);
-        return;
-      }
-      (async () => {
+  useEffect(() => {
+    let active = true;
+    if (!id || !paymentId) {
+      setNotFound(true);
+      setLoaded(true);
+      return;
+    }
+    (async () => {
+      try {
         const g = await getGroup(id);
         const p = await getPayment(id, paymentId);
         if (!active) return;
@@ -45,17 +45,28 @@ export default function EditPaymentScreen() {
           date: p.date,
         });
         setLoaded(true);
-      })();
-      return () => {
-        active = false;
-      };
-    }, [id, paymentId])
-  );
+      } catch (e) {
+        console.warn('[edit payment] load failed', e);
+        if (active) {
+          setNotFound(true);
+          setLoaded(true);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id, paymentId]);
 
   const handleSave = async (input: PaymentInput) => {
     if (!id || !paymentId) return;
-    await updatePayment(id, paymentId, input);
-    router.back();
+    try {
+      await updatePayment(id, paymentId, input);
+      router.back();
+    } catch (e) {
+      console.warn('[edit payment] updatePayment failed', e);
+      Alert.alert('保存できませんでした', 'ネットワークまたは Firebase 設定を確認してください。');
+    }
   };
 
   const handleDelete = () => {
@@ -66,8 +77,13 @@ export default function EditPaymentScreen() {
         message: 'この支払いを削除しますか？この操作は元に戻せません。',
       },
       async () => {
-        await deletePayment(id, paymentId);
-        router.back();
+        try {
+          await deletePayment(id, paymentId);
+          router.back();
+        } catch (e) {
+          console.warn('[edit payment] deletePayment failed', e);
+          Alert.alert('削除できませんでした', 'ネットワークまたは Firebase 設定を確認してください。');
+        }
       }
     );
   };

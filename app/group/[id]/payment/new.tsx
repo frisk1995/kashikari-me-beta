@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { PaymentForm } from '@/components/PaymentForm';
 import { SubHeader } from '@/components/Header';
-import { addPayment, getGroup } from '@/storage';
-import type { PaymentInput } from '@/storage';
+import { addPayment, getGroup } from '@/storage/firestore';
+import type { PaymentInput } from '@/storage/firestore';
 import type { Group } from '@/types';
 import { ColorPalette, fonts } from '@/theme';
 import { useTheme } from '@/context/ThemeContext';
@@ -16,28 +16,36 @@ export default function NewPaymentScreen() {
   const [group, setGroup] = useState<Group | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      if (!id) {
-        setLoaded(true);
-        return;
-      }
-      getGroup(id).then((g) => {
+  useEffect(() => {
+    let active = true;
+    if (!id) {
+      setLoaded(true);
+      return;
+    }
+    getGroup(id)
+      .then((g) => {
         if (!active) return;
         setGroup(g ?? null);
         setLoaded(true);
+      })
+      .catch((e) => {
+        console.warn('[new payment] getGroup failed', e);
+        if (active) setLoaded(true);
       });
-      return () => {
-        active = false;
-      };
-    }, [id])
-  );
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
   const handleSave = async (input: PaymentInput) => {
     if (!id) return;
-    await addPayment(id, input);
-    router.back();
+    try {
+      await addPayment(id, input);
+      router.back();
+    } catch (e) {
+      console.warn('[new payment] addPayment failed', e);
+      Alert.alert('保存できませんでした', 'ネットワークまたは Firebase 設定を確認してください。');
+    }
   };
 
   if (!loaded) {

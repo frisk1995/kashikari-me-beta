@@ -1,5 +1,78 @@
 # 実装進捗・自己評価
 
+## 追加機能: Firebase Firestore データ共有 + QRコード招待
+**ステータス:** 実装完了 - 評価待ち
+**実装日:** 2026-06-02
+
+### 実装内容
+- **依存追加:** `firebase`・`expo-crypto`・`expo-camera`・`react-native-qrcode-svg`・`react-native-svg`（SDK 54 互換）。
+- **Firebase 設定**（`src/firebase/config.ts` 新規）: 初期化を try/catch でガードし、config が placeholder のままなら `db = null`・`isFirebaseConfigured = false`。Firebase 未設定・初期化失敗でもアプリは落ちない。
+- **ユーザーID管理**（`src/storage/userId.ts` 新規）: AsyncStorage に UUID を永続化。`Crypto.randomUUID()`（失敗時は v4 風フォールバック）。初回生成時に Firestore `users/{id}` を best-effort で作成。
+- **UserContext**（`src/context/UserContext.tsx` 新規）: `getOrCreateUserId()` で取得した `userId` と `loading` を配布。`_layout.tsx` で `ThemeProvider` 配下を `UserProvider` でラップ。`useUser()` フックを提供。
+- **Firestore ストレージ層**（`src/storage/firestore.ts` 新規）: `subscribeGroups`/`createGroup`/`updateGroup`/`deleteGroup`/`getGroup`/`subscribePayments`/`getPayments`/`getPayment`/`addPayment`/`updatePayment`/`deletePayment`/`settleAllPayments`/`joinGroup` を実装。`onSnapshot` でリアルタイム購読、削除は `writeBatch` で payments subcollection も削除、`joinGroup` は `arrayUnion`。Timestamp↔number の正規化と null(db未設定)ガードを全関数に実装。
+- **型定義**（`src/types/index.ts`）: `Group` に `ownerId: string`・`participantIds: string[]` を追加。`Payment` に `groupId?: string` を追加。`Group.payments?` はローカルキャッシュ用に optional で残置。
+- **AsyncStorage層**（`src/storage/index.ts`）: `normalizeGroup`/`createGroup` に `ownerId`/`participantIds` の補完を追加（後方互換・型整合）。
+- **グループ一覧**（`app/index.tsx`）: `subscribeGroups(userId, ...)` でリアルタイム購読。各グループの payments を `subscribePayments` で購読し未精算合計を算出して `GroupCard` の `unsettledAmount` に渡す。グループ増減で payments 購読を動的に追加/解除、アンマウントで全解除。
+- **GroupCard**（`src/components/GroupCard.tsx`）: `unsettledAmount?` prop を追加（Firestore では payments が subcollection のため呼び出し側で算出）。省略時は `group.payments` から算出するフォールバックを維持。
+- **グループ作成/編集**（`app/group/new.tsx`・`app/group/[id]/edit.tsx`）: Firestore 版に切替。`createGroup(input, userId)`。編集画面に「メンバーを招待」導線（`onInvite`）を追加し `/group/{id}/invite` へ遷移。`useFocusEffect`→`useEffect` に変更。エラー時 Alert。
+- **GroupForm**（`src/components/GroupForm.tsx`）: `onInvite?` prop を追加。編集モード時に保存ボタン直下へ「メンバーを招待」アウトラインボタン（`qr-code-outline`・`c.primary` 枠）を表示。
+- **グループ詳細**（`app/group/[id]/index.tsx`）: `subscribePayments` でリアルタイム購読。`useFocusEffect` の手動 reload を廃止。`settleAllPayments` 後は購読で自動反映。エラー時 Alert。
+- **支払い追加/編集**（`app/group/[id]/payment/new.tsx`・`.../[paymentId]/edit.tsx`）: Firestore 版に切替。`useFocusEffect`→`useEffect`。エラー時 Alert。
+- **招待画面**（`app/group/[id]/invite.tsx` 新規）: グループ名・`<QRCode value="kashikarime://join/{groupId}" size={240} />`・URL テキスト・「カメラで読み取る」ボタン（→`/scan`）。テーマ追従。
+- **QRスキャナー**（`app/scan.tsx` 新規）: `expo-camera` の `useCameraPermissions`/`CameraView`。権限リクエストUI、スキャン枠オーバーレイ、`onBarcodeScanned`→`parseJoinUrl`→`joinGroup(groupId, userId)`→`router.replace('/group/{id}')`。多重実行防止（`handledRef`）。
+- **招待URLパーサ**（`src/utils/joinUrl.ts` 新規）: `kashikarime://join/{id}` と任意URLの `/join/{id}` を解析して groupId を返す純粋関数。
+- **ディープリンク**（`app/join/[groupId].tsx` 新規）: `kashikarime://join/{id}` ハンドラ。userId 取得後に `joinGroup` 実行→詳細へ replace。notfound/error 時はメッセージ + ホーム導線。
+- **app.json**: `plugins` に `expo-camera`（cameraPermission 文言付き）を追加。`scheme: "kashikarime"` は既存。
+- **firestore.rules**（プロジェクトルート新規）: プロトタイプ用オープンルール（users / groups / groups/payments すべて allow read,write）。
+- **_layout.tsx**: `scan` / `group/[id]/invite`（modal）と `join/[groupId]` を Stack に登録。
+
+### 自己評価
+
+| 基準 | スコア (1-5) | コメント |
+|------|-------------|---------|
+| 機能完全性 | 5 | Firestore CRUD + リアルタイム購読、QR生成、カメラスキャン、ディープリンク、招待導線まで全ステップ実装。tsc 0・web export 成功 |
+| コード品質 | 5 | ストレージ層を関数単位で分離、Timestamp正規化・null ガードを共通化、`useTheme()`/`makeStyles(c)` パターン踏襲。URLパースを純粋関数に切出 |
+| UI/UX | 4 | 招待・スキャン画面ともテーマ追従、スキャン枠オーバーレイ・処理中インジケータ。実機の見た目は Evaluator 確認待ち |
+| エラーハンドリング | 5 | Firebase 未設定/失敗で全画面がクラッシュしない設計。各書き込みに try/catch + Alert、購読は onError ログ、カメラ権限・notfound・多重スキャンを処理 |
+| 既存機能との統合 | 5 | 精算ロジック・GroupForm・PaymentForm は非破壊で再利用。GroupCard は後方互換 prop。AsyncStorage 層は残置。回帰なし（tsc 0） |
+
+### 技術的な判断
+- **Firebase 未設定でも起動可能に:** config が placeholder の間は `db=null`。購読系は空配列を一度通知して no-op unsubscribe、書き込み系は `NOT_CONFIGURED` を throw → 呼び出し側で Alert。プレースホルダ状態でもアプリ全体は起動・閲覧可能（空グループ表示）。Evaluator は実Firebase設定が無いと作成/同期は確認できない点に注意。
+- **アクセス制御はクライアント側フィルタ:** `subscribeGroups` は全 groups を購読し `participantIds.includes(userId) || ownerId===userId` でフィルタ。プロトタイプ用オープンルール前提（本番は participantIds ベースの Firestore ルールへ要強化）。
+- **未精算合計は per-group payments 購読で算出:** Firestore では payments が subcollection のため、一覧では各グループの payments を個別購読して `unsettledAmount` を算出。グループ数が多い場合は購読数が増えるトレードオフあり（プロトタイプ規模では許容）。
+- **`@/storage` の `GroupInput`/`PaymentInput`/`generateId`/`isValidDateString`/`toDateString` は据え置き:** Firestore 版と構造的に同一なため GroupForm/PaymentForm は無改修で流用（tsc で互換確認済み）。
+- **scheme は `kashikarime`（既存）:** 招待URLは `kashikarime://join/{groupId}`。`app/join/[groupId].tsx` が expo-router で処理。
+
+### 既知の課題
+- `src/firebase/config.ts` は placeholder のまま。実機/実DBでの作成・同期・参加の検証には Firebase コンソールの設定値貼り付けと `firestore.rules` のデプロイが必要。
+- Web では `expo-camera` のスキャンはブラウザのカメラ権限に依存（HTTPS/localhost 必須）。QR表示・招待画面・ディープリンクハンドラは Web でも確認可能。
+- クライアント側フィルタのため、グループ数が非常に多い場合は全件購読のコストが増える（本番はクエリ/ルールで絞る想定）。
+
+### Evaluator への引き渡し事項
+- **起動方法（Web）:**
+  ```bash
+  cd /Users/toshiki-kojima/my-project/kashikari-me-beta
+  npx expo start --web
+  # ブラウザで http://localhost:8081 を開く
+  ```
+  - 依存追加あり（`firebase` / `expo-crypto` / `expo-camera` / `react-native-qrcode-svg` / `react-native-svg`）。インストール済み。
+- **型チェック:** `npx tsc --noEmit`（エラー0）。`npx expo export --platform web`（成功）。
+- **テスト対象 URL:**
+  - ホーム: `http://localhost:8081/`
+  - 招待（QR表示）: 編集画面の「メンバーを招待」→ `/group/{id}/invite`
+  - スキャナー: `/scan`
+  - ディープリンク参加: `/join/{groupId}`
+- **重要な前提（要確認）:** `src/firebase/config.ts` は placeholder。**実 Firebase 設定が無い状態では、グループ/支払いの作成・同期・参加は完了せず Alert（保存できませんでした 等）になる**。これは仕様どおりの安全フォールバック。リアルタイム同期・参加の実動作確認には Firebase コンソールの設定値貼り付けが必要。設定未投入時の評価観点は「クラッシュしないこと・QR表示・カメラ権限UI・画面遷移」。
+- **テストシナリオ:**
+  1. アプリ起動 → ホームがクラッシュせず表示（Firebase 未設定でも空グループ or ローディング後に空状態）。
+  2. 編集画面（既存グループがあれば）に「メンバーを招待」ボタンが表示され、タップで招待画面へ遷移。QRコードとURL `kashikarime://join/{id}` が表示される。
+  3. 招待画面の「カメラで読み取る」→ `/scan`。カメラ権限プロンプト/許可UIが表示される（Web はブラウザ権限）。
+  4. `/join/{任意のID}` を直接開く → 「参加しています...」後、未設定/不正IDなら「グループが見つかりません」+「ホームに戻る」が表示されクラッシュしない。
+  5. （Firebase 設定済みの場合のみ）2端末でQR参加 → 一方の支払い追加が他方にリアルタイム反映されること。
+  6. 回帰: 既存の精算タブ・まとめて精算・共有・設定画面が従来どおり動作すること。
+
+---
+
 ## 追加機能: 設定画面のアプリ情報・フィードバックセクション
 **ステータス:** 実装完了 - 評価待ち
 **実装日:** 2026-06-02

@@ -10,21 +10,27 @@ interface GroupCardProps {
   group: Group;
   /** カラーローテーション用（一覧での並び順 index） */
   index: number;
+  /**
+   * 未精算金額（settled: false の支払いの合計）。
+   * Firestore では payments が subcollection のため、呼び出し側で算出して渡す。
+   * 省略時は group.payments（ローカルキャッシュ）から算出する。
+   */
+  unsettledAmount?: number;
   onPress: () => void;
 }
 
-/** 未精算金額（settled: false の支払いの合計） */
-function unsettledTotal(group: Group): number {
+/** group.payments（ローカルキャッシュ）から未精算金額を算出するフォールバック */
+function unsettledTotalFromGroup(group: Group): number {
   return (group.payments ?? [])
     .filter((p) => !p.settled)
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 }
 
-export function GroupCard({ group, index, onPress }: GroupCardProps) {
+export function GroupCard({ group, index, unsettledAmount, onPress }: GroupCardProps) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const memberCount = group.members.length;
-  const unsettled = unsettledTotal(group);
+  const unsettled = unsettledAmount ?? unsettledTotalFromGroup(group);
 
   return (
     <Pressable

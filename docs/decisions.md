@@ -119,3 +119,33 @@
 `SafeAreaProvider` に `initialMetrics={initialWindowMetrics}` を渡すことで、
 起動直後から正確な `insets.top` を取得できるようにしている。
 ヘッダーの `paddingTop` は `insets.top + 6`（ホーム）。
+
+---
+
+## Firestore データ共有 + QRコード招待（アーキテクチャ変更）
+
+**指示:** Firebase Firestore でグループ・支払いをリアルタイム共有し、QRコードでメンバーを招待できるようにする。
+
+### データモデル
+- **ユーザーID:** 端末ごとに UUID を `AsyncStorage`（key `kashikari.me/userId`）へ永続化。初回生成時に Firestore `users/{id}` を best-effort 作成。`expo-crypto` の `randomUUID()`（失敗時 v4 風フォールバック）。
+- **Firestore 構造:**
+  - `groups/{groupId}` … `name`/`color`/`icon`/`ownerId`/`participantIds[]`/`members[]`/`createdAt`/`updatedAt`
+  - `groups/{groupId}/payments/{paymentId}` … `amount`/`lenderId`/`borrowerIds[]`/`memo`/`date`/`settled`/`createdAt`/`updatedAt`
+- **型変更:** `Group` に `ownerId`/`participantIds` を追加、`Payment` に `groupId?` を追加。`Group.payments?` はローカルキャッシュ用に optional 残置（Firestore では subcollection 管理）。
+
+### 共有・アクセス制御
+- グループの可視性は `participantIds` で管理。`subscribeGroups` は全 groups を購読し、クライアント側で `participantIds.includes(userId) || ownerId===userId` をフィルタ。
+- 招待 = QRコード（`kashikarime://join/{groupId}`）。スキャンまたはディープリンクで `joinGroup` → `participantIds` に `arrayUnion`。
+- `firestore.rules` はプロトタイプ用オープンルール。**本番前に participantIds ベースのルールへ要強化。**
+
+### リアルタイム同期
+- 一覧・詳細とも `onSnapshot` 購読に統一。詳細画面の `useFocusEffect` 手動 reload は廃止。
+- グループ一覧では各グループの payments を個別購読して未精算合計（`GroupCard.unsettledAmount`）を算出。
+
+### フォールバック方針
+- `src/firebase/config.ts` が placeholder（未設定）でもアプリは起動する。`db=null` 時、購読系は空配列通知＋no-op unsubscribe、書き込み系は throw → 呼び出し側で Alert。
+- 実 DB 同期・参加の検証には Firebase コンソールの設定値貼り付けと `firestore.rules` デプロイが必要。
+
+### スキーム / ルーティング
+- `scheme: "kashikarime"`（既存）。`app/join/[groupId].tsx` が expo-router で `kashikarime://join/{id}` を処理。
+- `app/scan.tsx` は `expo-camera` の `CameraView` + `useCameraPermissions`。

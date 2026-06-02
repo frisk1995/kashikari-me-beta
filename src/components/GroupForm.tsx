@@ -45,6 +45,8 @@ interface GroupFormProps {
   onCancel: () => void;
   /** 編集時のみ表示する削除アクション */
   onDelete?: () => void;
+  /** 編集時のみ表示する「メンバーを招待」アクション */
+  onInvite?: () => void;
 }
 
 const MIN_MEMBERS = 2;
@@ -60,7 +62,14 @@ function buildInitialMembers(initial?: GroupFormInitial): MemberDraft[] {
   ];
 }
 
-export function GroupForm({ mode, initial, onSave, onCancel, onDelete }: GroupFormProps) {
+export function GroupForm({
+  mode,
+  initial,
+  onSave,
+  onCancel,
+  onDelete,
+  onInvite,
+}: GroupFormProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -225,6 +234,17 @@ export function GroupForm({ mode, initial, onSave, onCancel, onDelete }: GroupFo
 
           <View style={styles.saveBlock}>
             <PrimaryButton label="保存" onPress={handleSave} />
+            {mode === 'edit' && onInvite ? (
+              <Pressable
+                onPress={onInvite}
+                style={({ pressed }) => [styles.inviteBtn, { opacity: pressed ? 0.85 : 1 }]}
+                accessibilityRole="button"
+                accessibilityLabel="メンバーを招待"
+              >
+                <Ionicons name="qr-code-outline" size={18} color={colors.primary} />
+                <Text style={styles.inviteLabel}>メンバーを招待</Text>
+              </Pressable>
+            ) : null}
             {mode === 'edit' && onDelete ? (
               <DangerButton label="グループを削除" onPress={onDelete} style={styles.deleteBtn} />
             ) : null}
@@ -328,6 +348,23 @@ function makeStyles(c: ColorPalette) {
     saveBlock: {
       marginTop: spacing['3xl'],
       gap: 12,
+    },
+    inviteBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      height: 52,
+      borderRadius: 18,
+      borderWidth: 1.5,
+      borderColor: c.primary,
+      backgroundColor: c.surface,
+    },
+    inviteLabel: {
+      fontFamily: fonts.jp700,
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.primary,
     },
     deleteBtn: {
       marginTop: 4,

@@ -18,9 +18,14 @@ export interface Group {
   color: string;
   /** グループのアイコン名（Ionicons、例: 'airplane-outline'）。未設定は normalizeGroup で補完される */
   icon: string;
+  /** グループ作成者の userId（Firestore 共有用） */
+  ownerId: string;
+  /** アクセス可能な userId 一覧（招待で加わったメンバーを含む） */
+  participantIds: string[];
   /**
-   * Sprint 2 以降で支払いを格納する。
-   * Sprint 1 では空配列で初期化し、構造の後方互換を確保する。
+   * AsyncStorage（ローカルキャッシュ）専用の支払い配列。
+   * Firestore では payments subcollection で管理するため、Firestore 経由のデータには含まれない。
+   * 後方互換のため optional として残す。
    */
   payments?: Payment[];
 }
@@ -33,6 +38,8 @@ export interface Group {
  */
 export interface Payment {
   id: string;
+  /** 所属グループの id（Firestore subcollection 由来。ローカルデータでは未設定の場合がある） */
+  groupId?: string;
   amount: number;
   /** 貸した人のメンバーID */
   lenderId: string;

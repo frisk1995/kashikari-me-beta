@@ -93,6 +93,10 @@ function normalizeGroup(raw: unknown): Group | null {
     updatedAt: typeof g.updatedAt === 'number' ? g.updatedAt : Date.now(),
     color: typeof g.color === 'string' && g.color ? g.color : DEFAULT_GROUP_COLOR,
     icon: typeof g.icon === 'string' && g.icon ? g.icon : DEFAULT_GROUP_ICON,
+    ownerId: typeof g.ownerId === 'string' ? g.ownerId : '',
+    participantIds: Array.isArray(g.participantIds)
+      ? g.participantIds.filter((id): id is string => typeof id === 'string')
+      : [],
     payments: Array.isArray(g.payments)
       ? g.payments.map(normalizePayment).filter((p): p is Payment => p !== null)
       : [],
@@ -160,6 +164,8 @@ export async function createGroup(input: GroupInput): Promise<Group> {
     updatedAt: now,
     color: input.color ?? DEFAULT_GROUP_COLOR,
     icon: input.icon ?? DEFAULT_GROUP_ICON,
+    ownerId: '',
+    participantIds: [],
     payments: [],
   };
   data.groups.push(group);

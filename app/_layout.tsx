@@ -17,6 +17,7 @@ import {
   Baloo2_800ExtraBold,
 } from '@expo-google-fonts/baloo-2';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { UserProvider } from '@/context/UserContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,11 +40,14 @@ function ThemedStack() {
           <Stack.Screen name="group/new" options={{ presentation: 'modal' }} />
           <Stack.Screen name="group/[id]/index" />
           <Stack.Screen name="group/[id]/edit" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="group/[id]/invite" options={{ presentation: 'modal' }} />
           <Stack.Screen name="group/[id]/payment/new" options={{ presentation: 'modal' }} />
           <Stack.Screen
             name="group/[id]/payment/[paymentId]/edit"
             options={{ presentation: 'modal' }}
           />
+          <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="join/[groupId]" />
         </Stack>
       </View>
     </>
@@ -86,7 +90,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayout}>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <ThemeProvider>
-          <ThemedStack />
+          <UserProvider>
+            <ThemedStack />
+          </UserProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

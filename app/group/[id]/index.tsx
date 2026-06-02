@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SubHeader } from '@/components/Header';
@@ -11,7 +11,11 @@ import { EmptyState } from '@/components/EmptyState';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { IconTile } from '@/components/IconTile';
 import { Toast } from '@/components/Toast';
-import { getGroup, getPayments, settleAllPayments } from '@/storage';
+import {
+  getGroup,
+  settleAllPayments,
+  subscribePayments,
+} from '@/storage/firestore';
 import type { Group, Payment } from '@/types';
 import { buildSettlementText, computeSettlement } from '@/utils/settlement';
 import { confirmDestructive } from '@/utils/confirm';
@@ -41,37 +45,44 @@ export default function GroupDetailScreen() {
   const [toast, setToast] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
 
-  const reload = useCallback(async (gid: string) => {
-    const ps = await getPayments(gid);
-    setPayments(ps);
-  }, []);
+  // グループ本体を取得し、payments をリアルタイム購読する。
+  useEffect(() => {
+    let active = true;
+    if (!id) {
+      setNotFound(true);
+      setLoaded(true);
+      return;
+    }
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      if (!id) {
-        setNotFound(true);
-        return;
-      }
-      (async () => {
-        const g = await getGroup(id);
+    getGroup(id)
+      .then((g) => {
         if (!active) return;
         if (!g) {
           setNotFound(true);
           setLoaded(true);
           return;
         }
-        const ps = await getPayments(id);
-        if (!active) return;
         setGroup(g);
-        setPayments(ps);
         setLoaded(true);
-      })();
-      return () => {
-        active = false;
-      };
-    }, [id])
-  );
+      })
+      .catch((e) => {
+        console.warn('[group detail] getGroup failed', e);
+        if (active) {
+          setNotFound(true);
+          setLoaded(true);
+        }
+      });
+
+    // payments のリアルタイム購読（追加・編集・精算が即時反映される）
+    const unsub = subscribePayments(id, (ps) => {
+      if (active) setPayments(ps);
+    });
+
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [id]);
 
   if (!loaded) {
     return (
@@ -140,10 +151,15 @@ export default function GroupDetailScreen() {
         confirmLabel: '精算する',
       },
       async () => {
-        await settleAllPayments(id);
-        await reload(id);
-        setToast('全ての精算を完了にしました');
-        setTab('settled');
+        try {
+          await settleAllPayments(id);
+          // payments は subscribePayments により自動更新される
+          setToast('全ての精算を完了にしました');
+          setTab('settled');
+        } catch (e) {
+          console.warn('[group detail] settleAllPayments failed', e);
+          Alert.alert('精算できませんでした', 'ネットワークまたは Firebase 設定を確認してください。');
+        }
       }
     );
   };
