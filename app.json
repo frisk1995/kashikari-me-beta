@@ -14,8 +14,9 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.toshimaru.kashikarime",
+      "bundleIdentifier": "com.kashikarime.ios",
       "buildNumber": "1",
+      "appleTeamId": "P59SAZF9GV",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
