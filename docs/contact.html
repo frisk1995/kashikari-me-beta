@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>お問い合わせ | Kashikari.me</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: #FFF8F2;
+      color: #333;
+      line-height: 1.8;
+      padding: 0 16px 64px;
+    }
+    header {
+      background: #FF6B35;
+      color: #fff;
+      padding: 24px 16px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 1.4rem; letter-spacing: 0.04em; }
+    header p { font-size: 0.85rem; margin-top: 4px; opacity: 0.9; }
+    main { max-width: 720px; margin: 0 auto; }
+    h2 {
+      font-size: 1.1rem;
+      border-left: 4px solid #FF6B35;
+      padding-left: 12px;
+      margin: 32px 0 12px;
+      color: #222;
+    }
+    p, li { font-size: 0.95rem; margin-bottom: 8px; }
+    .contact-box {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      padding: 32px;
+      margin-top: 24px;
+    }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .contact-item:last-child { border-bottom: none; }
+    .contact-label {
+      font-size: 0.85rem;
+      color: #888;
+      min-width: 80px;
+    }
+    .contact-value a {
+      color: #FF6B35;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .contact-value a:hover { text-decoration: underline; }
+    .note {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 24px;
+      line-height: 1.7;
+    }
+    footer {
+      margin-top: 48px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 32px;
+      color: #FF6B35;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kashikari.me — お問い合わせ</h1>
+    <p>Contact</p>
+  </header>
+
+  <main>
+    <p>アプリに関するご意見・ご要望・不具合のご報告はメールにてお受けしています。</p>
+
+    <div class="contact-box">
+      <div class="contact-item">
+        <span class="contact-label">メール</span>
+        <span class="contact-value">
+          <a href="mailto:kashikari.me.26@gmail.com">kashikari.me.26@gmail.com</a>
+        </span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">対応言語</span>
+        <span class="contact-value">日本語・English</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">返信目安</span>
+        <span class="contact-value">3〜5営業日以内</span>
+      </div>
+    </div>
+
+    <p class="note">
+      ※ お問い合わせの内容によっては、返信できない場合や返信までにお時間をいただく場合があります。<br>
+      ※ アプリの不具合報告の際は、iOS のバージョンおよびアプリのバージョンをご記載いただくとスムーズに対応できます。
+    </p>
+
+    <h2>よくあるご質問</h2>
+
+    <p><strong>Q. データが消えてしまいました。</strong><br>
+    グループデータはクラウド（Firebase）に保存されています。同じ端末・同じアプリ上で再度ご確認ください。アプリを削除した場合、データが復元できない場合があります。</p>
+
+    <p><strong>Q. グループに招待されたのに参加できません。</strong><br>
+    招待URLまたはQRコードを再度取得し、試してみてください。それでも解決しない場合はお問い合わせください。</p>
+
+    <p><strong>Q. アプリが起動しません。</strong><br>
+    iOSを最新バージョンにアップデートの上、アプリを再起動してください。改善しない場合はメールにてご連絡ください。</p>
+
+    <a class="back-link" href="index.html">← トップページに戻る</a>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Kashikari.me. All rights reserved.</p>
+  </footer>
+</body>
+</html>
