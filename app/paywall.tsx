@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { PrimaryButton, SecondaryButton } from '@/components/PrimaryButton';
 import { usePurchase, FREE_GROUP_LIMIT, FREE_MEMBER_LIMIT } from '@/context/PurchaseContext';
 import { ColorPalette, fonts, radius, spacing } from '@/theme';
 import { useTheme } from '@/context/ThemeContext';
+import { useIPad } from '@/hooks/useIPad';
 
 const PRICE_LABEL = '¥300 / 月';
 
@@ -21,6 +22,7 @@ export default function PaywallScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { isWide } = useIPad();
   const { purchasePremium, restorePurchases, _devTogglePremium, isPremium, loading } = usePurchase();
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -78,9 +80,16 @@ export default function PaywallScreen() {
         </View>
 
         {/* 機能リスト */}
-        <View style={styles.featureList}>
+        <View style={[styles.featureList, isWide && styles.featureListGrid]}>
           {FEATURES.map((f, i) => (
-            <View key={i} style={[styles.featureCard, { backgroundColor: colors.surface }]}>
+            <View
+              key={i}
+              style={[
+                styles.featureCard,
+                { backgroundColor: colors.surface },
+                isWide && styles.featureCardGrid,
+              ]}
+            >
               <View style={[styles.featureIcon, { backgroundColor: colors.primary + '18' }]}>
                 <Ionicons name={f.icon as any} size={22} color={colors.primary} />
               </View>
@@ -103,7 +112,7 @@ export default function PaywallScreen() {
       </ScrollView>
 
       {/* CTA */}
-      <View style={styles.cta}>
+      <View style={[styles.cta, isWide && styles.ctaWide]}>
         {isPremium ? (
           <View style={[styles.alreadyPremium, { backgroundColor: colors.surface }]}>
             <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
@@ -190,6 +199,8 @@ function makeStyles(c: ColorPalette) {
       textAlign: 'center',
     },
     featureList: { width: '100%', gap: spacing.sm, marginBottom: spacing['2xl'] },
+    featureListGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+    featureCardGrid: { width: '47%' },
     featureCard: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -223,6 +234,11 @@ function makeStyles(c: ColorPalette) {
     cta: {
       paddingHorizontal: spacing.screenH,
       gap: spacing.sm,
+    },
+    ctaWide: {
+      maxWidth: 480,
+      width: '100%',
+      alignSelf: 'center',
     },
     alreadyPremium: {
       flexDirection: 'row',

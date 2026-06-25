@@ -25,10 +25,12 @@ import type { Group } from '@/types';
 import { ColorPalette, fonts, radius, spacing } from '@/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
+import { useIPad, IPAD_MAX_WIDTH } from '@/hooks/useIPad';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { isWide } = useIPad();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { userId, loading: userLoading } = useUser();
   const { isPremium } = usePurchase();
@@ -112,6 +114,10 @@ export default function HomeScreen() {
   const showLoading = userLoading || (!loaded && !!userId);
   const isEmpty = loaded && groups.length === 0;
 
+  const iPadContentStyle = isWide
+    ? { maxWidth: IPAD_MAX_WIDTH, width: '100%' as const, alignSelf: 'center' as const }
+    : undefined;
+
   return (
     <View style={styles.screen}>
       <HomeHeader
@@ -127,46 +133,67 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: spacing.scrollBottom }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionLabel}>グループ</Text>
+        <View style={iPadContentStyle}>
+          <Text style={styles.sectionLabel}>グループ</Text>
 
-        {showLoading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
-        ) : isEmpty ? (
-          <EmptyState
-            heading="まだグループがないよ！"
-            description="旅行やイベントごとにグループを作って、立て替えをサクッと記録しよう"
-          />
-        ) : (
-          groups.map((group, index) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              index={index}
-              unsettledAmount={unsettledMap[group.id] ?? 0}
-              onPress={() => router.push(`/group/${group.id}`)}
+          {showLoading ? (
+            <View style={styles.center}>
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          ) : isEmpty ? (
+            <EmptyState
+              heading="まだグループがないよ！"
+              description="旅行やイベントごとにグループを作って、立て替えをサクッと記録しよう"
             />
-          ))
-        )}
+          ) : isWide ? (
+            <View style={styles.gridWrap}>
+              {groups.map((group, index) => (
+                <View key={group.id} style={styles.gridItem}>
+                  <GroupCard
+                    group={group}
+                    index={index}
+                    unsettledAmount={unsettledMap[group.id] ?? 0}
+                    onPress={() => router.push(`/group/${group.id}`)}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : (
+            groups.map((group, index) => (
+              <GroupCard
+                key={group.id}
+                group={group}
+                index={index}
+                unsettledAmount={unsettledMap[group.id] ?? 0}
+                onPress={() => router.push(`/group/${group.id}`)}
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
 
       <View style={[styles.fabWrap, { paddingBottom: insets.bottom + 12 }]} pointerEvents="box-none">
-        <SecondaryButton
-          label="グループに参加"
-          onPress={() => setJoinModalVisible(true)}
-        />
-        <PrimaryButton
-          label="新規グループ"
-          withPlus
-          onPress={() => {
-            if (!isPremium && groups.length >= FREE_GROUP_LIMIT) {
-              router.push('/paywall');
-            } else {
-              router.push('/group/new');
-            }
-          }}
-        />
+        <View style={iPadContentStyle}>
+          <View style={styles.fabButtons}>
+            <SecondaryButton
+              label="グループに参加"
+              onPress={() => setJoinModalVisible(true)}
+              style={isWide ? styles.fabButtonHalf : undefined}
+            />
+            <PrimaryButton
+              label="新規グループ"
+              withPlus
+              onPress={() => {
+                if (!isPremium && groups.length >= FREE_GROUP_LIMIT) {
+                  router.push('/paywall');
+                } else {
+                  router.push('/group/new');
+                }
+              }}
+              style={isWide ? styles.fabButtonHalf : undefined}
+            />
+          </View>
+        </View>
       </View>
 
       <Modal
@@ -245,7 +272,21 @@ function makeStyles(c: ColorPalette) {
       left: spacing.screenH,
       right: spacing.screenH,
       bottom: 0,
+    },
+    fabButtons: {
+      flexDirection: 'column',
       gap: spacing.sm,
+    },
+    fabButtonHalf: {
+      flex: 1,
+    },
+    gridWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.cardGap,
+    },
+    gridItem: {
+      width: '48%',
     },
     modalOverlay: {
       flex: 1,

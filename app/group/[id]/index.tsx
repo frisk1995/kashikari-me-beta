@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import { confirmDestructive } from '@/utils/confirm';
 import { shareText } from '@/utils/share';
 import { ColorPalette, fonts, formatYen, radius, spacing } from '@/theme';
 import { useTheme } from '@/context/ThemeContext';
+import { useIPad, IPAD_MAX_WIDTH } from '@/hooks/useIPad';
 
 type TabKey = 'payments' | 'settlement' | 'settled';
 
@@ -36,6 +37,10 @@ export default function GroupDetailScreen() {
   const insets = useSafeAreaInsets();
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { isWide } = useIPad();
+  const iPadWrap = isWide
+    ? { maxWidth: IPAD_MAX_WIDTH, width: '100%' as const, alignSelf: 'center' as const }
+    : undefined;
 
   const [group, setGroup] = useState<Group | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -175,6 +180,7 @@ export default function GroupDetailScreen() {
 
       {/* 未精算サマリーカード */}
       <View style={styles.summaryWrap}>
+        <View style={iPadWrap}>
         <View style={[styles.summaryCard, shadows.card]}>
           <View style={styles.summaryLeft}>
             <IconTile label={group.name} icon={group.icon} color={group.color} index={0} size={44} />
@@ -184,16 +190,18 @@ export default function GroupDetailScreen() {
             </View>
           </View>
         </View>
-        <View style={styles.tabsWrap}>
-          <SegmentTabs tabs={TABS} activeKey={tab} onChange={(k) => setTab(k as TabKey)} />
+          <View style={styles.tabsWrap}>
+            <SegmentTabs tabs={TABS} activeKey={tab} onChange={(k) => setTab(k as TabKey)} />
+          </View>
         </View>
-      </View>
+        </View>
 
       <ScrollView
         style={styles.flex}
         contentContainerStyle={[styles.content, { paddingBottom: spacing.scrollBottom }]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={iPadWrap}>
         {tab === 'payments' ? (
           <>
             <Text style={styles.sectionLabel}>支払い履歴</Text>
@@ -282,6 +290,7 @@ export default function GroupDetailScreen() {
             )}
           </>
         )}
+        </View>
       </ScrollView>
 
       {tab === 'payments' ? (
@@ -289,11 +298,13 @@ export default function GroupDetailScreen() {
           style={[styles.fabWrap, { paddingBottom: insets.bottom + 12 }]}
           pointerEvents="box-none"
         >
-          <PrimaryButton
-            label="支払いを追加"
-            withPlus
-            onPress={() => router.push(`/group/${group.id}/payment/new`)}
-          />
+          <View style={iPadWrap}>
+            <PrimaryButton
+              label="支払いを追加"
+              withPlus
+              onPress={() => router.push(`/group/${group.id}/payment/new`)}
+            />
+          </View>
         </View>
       ) : null}
 

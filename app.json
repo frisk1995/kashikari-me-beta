@@ -13,7 +13,7 @@
       "backgroundColor": "#FFF8F2"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.kashikarime.ios",
       "buildNumber": "1",
       "appleTeamId": "P59SAZF9GV",
