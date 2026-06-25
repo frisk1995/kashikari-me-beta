@@ -23,8 +23,7 @@ const THEME_OPTIONS: { id: ThemeId; label: string }[] = [
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 const TERMS_URL = 'https://toshimaru-dev.github.io/kashikari.me/terms-of-use.html';
 const PRIVACY_URL = 'https://toshimaru-dev.github.io/kashikari.me/privacy-policy.html';
-const CONTACT_EMAIL = 'kashikari.me.26@gmail.com';
-const CONTACT_SUBJECT = '[Kashikari.me] お問い合わせ';
+const CONTACT_URL = 'https://toshimaru-dev.github.io/kashikari.me/contact.html';
 
 /** in-app ブラウザで URL を開く */
 const openUrl = async (url: string) => {
@@ -38,11 +37,7 @@ const openUrl = async (url: string) => {
   }
 };
 
-/** メールアプリを起動する */
-const openMail = () => {
-  const subject = encodeURIComponent(CONTACT_SUBJECT);
-  Linking.openURL(`mailto:${CONTACT_EMAIL}?subject=${subject}`).catch(() => {});
-};
+
 
 export default function SettingsScreen() {
   const { colors, themeId, shadows } = useTheme();
@@ -222,10 +217,10 @@ export default function SettingsScreen() {
 
         {/* お問い合わせ */}
         <Pressable
-          onPress={openMail}
+          onPress={() => openUrl(CONTACT_URL)}
           style={({ pressed }) => [styles.row, shadows.card, { opacity: pressed ? 0.85 : 1 }]}
           accessibilityRole="button"
-          accessibilityLabel="お問い合わせメールを作成する"
+          accessibilityLabel="お問い合わせページを開く"
         >
           <View style={styles.rowIcon}>
             <Ionicons name="mail-outline" size={20} color={colors.primary} />

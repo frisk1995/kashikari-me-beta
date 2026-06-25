@@ -3,13 +3,13 @@
 ## 公開URL
 
 ```
-https://frisk1995.github.io/kashikari-me-beta/privacy-policy.html
+https://toshimaru-dev.github.io/kashikari.me/privacy-policy.html
 ```
 
 ## トップページ
 
 ```
-https://frisk1995.github.io/kashikari-me-beta/
+https://toshimaru-dev.github.io/kashikari.me/
 ```
 
 ## GitHub Pages 設定
@@ -27,7 +27,7 @@ https://frisk1995.github.io/kashikari-me-beta/
 App Store Connect でアプリを申請する際、以下の欄にプライバシーポリシーURLを入力する：
 
 - **App Information > Privacy Policy URL:**
-  `https://frisk1995.github.io/kashikari-me-beta/privacy-policy.html`
+  `https://toshimaru-dev.github.io/kashikari.me/privacy-policy.html`
 
 ## 注意事項
 

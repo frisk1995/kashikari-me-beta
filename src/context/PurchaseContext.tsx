@@ -1,14 +1,3 @@
-/**
- * 課金状態を管理する Context。
- *
- * 現在は AsyncStorage ベースのモック実装。
- * Apple Developer 登録後に react-native-purchases（RevenueCat）へ差し替える。
- *
- * 差し替え手順:
- *   1. `npx expo install react-native-purchases`
- *   2. app.json の plugins に "react-native-purchases" を追加
- *   3. このファイルの TODO コメント箇所を RevenueCat の実装に置き換える
- */
 import React, {
   createContext,
   useCallback,
@@ -18,20 +7,22 @@ import React, {
   useState,
   type ReactNode,
 } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import Purchases, { LOG_LEVEL, type CustomerInfo } from 'react-native-purchases';
+import { Platform } from 'react-native';
+
+const REVENUECAT_API_KEY_IOS = 'appl_WaktqXwqTRnSIoLmhfZVSFElmVR';
+
+// App Store Connect で登録した Product ID（未登録の場合は後で差し替え）
+const PRODUCT_ID = 'com.kashikarime.ios.premium.monthly';
 
 /** 無料プランの上限 */
 export const FREE_GROUP_LIMIT = 1;
 export const FREE_MEMBER_LIMIT = 3;
 
-const PREMIUM_STORAGE_KEY = 'kashikari.me/isPremium';
-
 interface PurchaseContextValue {
   isPremium: boolean;
   loading: boolean;
-  /** 課金処理（モック: AsyncStorage に保存 / 本番: RevenueCat 購入） */
   purchasePremium: () => Promise<void>;
-  /** 購入復元（モック: 同上 / 本番: RevenueCat restore） */
   restorePurchases: () => Promise<void>;
   /** 開発用: プレミアム状態をトグルする（__DEV__ のみ使用） */
   _devTogglePremium: () => Promise<void>;
@@ -45,35 +36,57 @@ const PurchaseContext = createContext<PurchaseContextValue>({
   _devTogglePremium: async () => {},
 });
 
+function isPremiumActive(info: CustomerInfo): boolean {
+  return Object.keys(info.entitlements.active).length > 0;
+}
+
 export function PurchaseProvider({ children }: { children: ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: 本番実装では Purchases.configure() + getCustomerInfo() に置き換える
-    AsyncStorage.getItem(PREMIUM_STORAGE_KEY)
-      .then((v) => setIsPremium(v === 'true'))
+    if (Platform.OS === 'web') {
+      setLoading(false);
+      return;
+    }
+
+    if (__DEV__) {
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    }
+
+    Purchases.configure({ apiKey: REVENUECAT_API_KEY_IOS });
+
+    Purchases.getCustomerInfo()
+      .then((info) => setIsPremium(isPremiumActive(info)))
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    Purchases.addCustomerInfoUpdateListener((info) => {
+      setIsPremium(isPremiumActive(info));
+    });
   }, []);
 
   const purchasePremium = useCallback(async () => {
-    // TODO: 本番実装では Purchases.purchasePackage(package) に置き換える
-    await AsyncStorage.setItem(PREMIUM_STORAGE_KEY, 'true');
-    setIsPremium(true);
+    const offerings = await Purchases.getOfferings();
+    const pkg =
+      offerings.current?.availablePackages.find(
+        (p) => p.product.identifier === PRODUCT_ID
+      ) ?? offerings.current?.availablePackages[0];
+
+    if (!pkg) throw new Error('購入可能なプランが見つかりません');
+
+    const { customerInfo } = await Purchases.purchasePackage(pkg);
+    setIsPremium(isPremiumActive(customerInfo));
   }, []);
 
   const restorePurchases = useCallback(async () => {
-    // TODO: 本番実装では Purchases.restorePurchases() に置き換える
-    await AsyncStorage.setItem(PREMIUM_STORAGE_KEY, 'true');
-    setIsPremium(true);
+    const info = await Purchases.restorePurchases();
+    setIsPremium(isPremiumActive(info));
   }, []);
 
   const _devTogglePremium = useCallback(async () => {
-    const next = !isPremium;
-    await AsyncStorage.setItem(PREMIUM_STORAGE_KEY, next ? 'true' : 'false');
-    setIsPremium(next);
-  }, [isPremium]);
+    setIsPremium((prev) => !prev);
+  }, []);
 
   const value = useMemo(
     () => ({ isPremium, loading, purchasePremium, restorePurchases, _devTogglePremium }),

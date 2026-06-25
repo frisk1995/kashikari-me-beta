@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "かしかり.me",
+    "name": "Kashikari.me",
     "slug": "kashikari-me-beta",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -43,7 +43,8 @@
           "cameraPermission": "グループメンバーを招待するためにカメラを使用します。"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true

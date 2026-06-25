@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +21,7 @@ export default function PaywallScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { purchasePremium, restorePurchases, _devTogglePremium, isPremium } = usePurchase();
+  const { purchasePremium, restorePurchases, _devTogglePremium, isPremium, loading } = usePurchase();
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
 
@@ -30,8 +30,9 @@ export default function PaywallScreen() {
     try {
       await purchasePremium();
       router.back();
-    } catch (e) {
-      console.warn('[paywall] purchasePremium failed', e);
+    } catch (e: any) {
+      const msg: string = e?.userInfo?.readableDescription ?? e?.message ?? '購入を完了できませんでした。しばらく経ってから再度お試しください。';
+      Alert.alert('購入エラー', msg, [{ text: 'OK' }]);
     } finally {
       setPurchasing(false);
     }
@@ -41,9 +42,9 @@ export default function PaywallScreen() {
     setRestoring(true);
     try {
       await restorePurchases();
-      router.back();
-    } catch (e) {
-      console.warn('[paywall] restorePurchases failed', e);
+      Alert.alert('復元完了', '購入済みのプランを復元しました。', [{ text: 'OK', onPress: () => router.back() }]);
+    } catch (e: any) {
+      Alert.alert('復元エラー', '購入履歴が見つかりませんでした。', [{ text: 'OK' }]);
     } finally {
       setRestoring(false);
     }
@@ -110,10 +111,14 @@ export default function PaywallScreen() {
               プレミアムプランご利用中
             </Text>
           </View>
+        ) : loading ? (
+          <View style={[styles.alreadyPremium, { backgroundColor: colors.surface }]}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
         ) : (
           <PrimaryButton
             label={purchasing ? '処理中...' : `${PRICE_LABEL}で始める`}
-            onPress={handlePurchase}
+            onPress={purchasing ? () => {} : handlePurchase}
           />
         )}
 

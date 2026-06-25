@@ -4,8 +4,8 @@
 
 | 項目 | 値 |
 |------|-----|
-| アプリ名 | かしかり.me ー割り勘・立替精算 |
-| バンドルID | me.kashikari.beta |
+| アプリ名 | Kashikari.me ー割り勘・立替精算 |
+| バンドルID | com.kashikarime.ios |
 | バージョン | 1.0.0 |
 | ビルド番号 | 1 |
 | プラットフォーム | iOS のみ |
@@ -25,8 +25,8 @@
 | 項目 | 値 |
 |------|-----|
 | 価格 | 無料（Free） |
-| アプリ内課金 | なし |
-| サブスクリプション | なし |
+| アプリ内課金 | あり（月額サブスクリプション ¥300） |
+| サブスクリプション | Premium Monthly（com.kashikarime.ios.premium.monthly） |
 | 広告 | なし（IDFA 不使用） |
 
 ## 連絡先・サポート情報
@@ -35,27 +35,28 @@
 |------|-----|
 | 開発者名 | Toshiki Kojima |
 | メールアドレス | kashikari.me.26@gmail.com |
-| サポートURL | https://frisk1995.github.io/kashikari-me-beta/ |
-| プライバシーポリシーURL | https://frisk1995.github.io/kashikari-me-beta/privacy-policy.html |
-| マーケティングURL | https://frisk1995.github.io/kashikari-me-beta/ |
+| サポートURL | https://toshimaru-dev.github.io/kashikari.me/ |
+| プライバシーポリシーURL | https://toshimaru-dev.github.io/kashikari.me/privacy-policy.html |
+| マーケティングURL | https://toshimaru-dev.github.io/kashikari.me/ |
 
 ## App Store Connect でのアプリ登録手順
 
 1. [App Store Connect](https://appstoreconnect.apple.com) にログイン
 2. 「マイ App」→「＋」→「新規 App」をクリック
 3. プラットフォーム: iOS を選択
-4. 名前: `かしかり.me ー割り勘・立替精算`
+4. 名前: `Kashikari.me ー割り勘・立替精算`
 5. プライマリ言語: 日本語
-6. バンドル ID: `me.kashikari.beta`（EAS ビルド後に自動登録されている場合はそちらを選択）
-7. SKU: `kashikari-me-beta-001`（任意の一意な識別子）
+6. バンドル ID: `com.kashikarime.ios`
+7. SKU: `kashikarime-001`
 8. アクセス: 制限なし
 
 ## プライバシー申告（App Privacy）
 
 App Store Connect の「App Privacy」セクションで以下を申告する：
 
-- **データ収集なし:** 本アプリはユーザーデータを収集・送信しません
-- 選択: 「No, we do not collect data from this app」
+- ユーザーIDをクラウド（Firebase）に保存（匿名認証）
+- グループ・支払いデータをクラウドに保存
+- 広告・トラッキング目的では使用しない
 
 ## 年齢制限（Age Rating）
 
@@ -68,8 +69,8 @@ App Store Connect の「App Rating」でアンケートに回答：
 
 | 項目 | 内容 |
 |------|------|
-| デモアカウント | 不要（ログイン機能なし） |
-| 審査担当者へのメモ | 本アプリはアカウント登録不要で、起動直後からすぐに利用できます。データはデバイスのローカルストレージにのみ保存され、ネットワーク接続は一切使用しません。 |
+| デモアカウント | 不要（匿名認証のためアカウント登録不要） |
+| 審査担当者へのメモ | 本アプリはアカウント登録不要で、起動直後からすぐに利用できます。データはFirebase（クラウド）に保存されます。課金機能（月額サブスクリプション）を含みます。 |
 
 ## スクリーンショット要件
 
@@ -80,3 +81,4 @@ App Store Connect の「App Rating」でアンケートに回答：
 | 日付 | 内容 |
 |------|------|
 | 2026-06-01 | store-info.md 初版作成 |
+| 2026-06-23 | アプリ名・バンドルID・URL・課金情報を最新化 |
