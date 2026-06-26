@@ -4,12 +4,26 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PrimaryButton, SecondaryButton } from '@/components/PrimaryButton';
-import { usePurchase, FREE_GROUP_LIMIT, FREE_MEMBER_LIMIT } from '@/context/PurchaseContext';
+import { usePurchase, FREE_GROUP_LIMIT, FREE_MEMBER_LIMIT, type PlanType } from '@/context/PurchaseContext';
 import { ColorPalette, fonts, radius, spacing } from '@/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useIPad } from '@/hooks/useIPad';
 
-const PRICE_LABEL = '¥300 / 月';
+const PLANS: { type: PlanType; label: string; price: string; sub: string; badge?: string }[] = [
+  {
+    type: 'yearly',
+    label: '年額プラン',
+    price: '¥2,800 / 年',
+    sub: '月換算 ¥233 — 2ヶ月以上お得',
+    badge: 'おすすめ',
+  },
+  {
+    type: 'monthly',
+    label: '月額プラン',
+    price: '¥300 / 月',
+    sub: 'いつでもキャンセル可能',
+  },
+];
 
 const FEATURES: { icon: string; free: string; premium: string }[] = [
   { icon: 'albums-outline', free: `グループ ${FREE_GROUP_LIMIT}個まで`, premium: 'グループ無制限' },
@@ -26,11 +40,14 @@ export default function PaywallScreen() {
   const { purchasePremium, restorePurchases, _devTogglePremium, isPremium, loading } = usePurchase();
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>('yearly');
+
+  const currentPlan = PLANS.find((p) => p.type === selectedPlan)!;
 
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
-      await purchasePremium();
+      await purchasePremium(selectedPlan);
       router.back();
     } catch (e: any) {
       const msg: string = e?.userInfo?.readableDescription ?? e?.message ?? '購入を完了できませんでした。しばらく経ってから再度お試しください。';
@@ -104,11 +121,47 @@ export default function PaywallScreen() {
           ))}
         </View>
 
-        {/* 価格 */}
-        <Text style={[styles.price, { color: colors.text }]}>{PRICE_LABEL}</Text>
-        <Text style={[styles.priceNote, { color: colors.textSub }]}>
-          いつでもキャンセル可能
-        </Text>
+        {/* プラン選択 */}
+        <View style={styles.planList}>
+          {PLANS.map((plan) => {
+            const selected = selectedPlan === plan.type;
+            return (
+              <Pressable
+                key={plan.type}
+                onPress={() => setSelectedPlan(plan.type)}
+                style={[
+                  styles.planCard,
+                  { borderColor: selected ? colors.primary : colors.border,
+                    backgroundColor: selected ? colors.primary + '0D' : colors.surface },
+                ]}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
+              >
+                <View style={styles.planCardLeft}>
+                  <View style={styles.planLabelRow}>
+                    <Text style={[styles.planLabel, { color: colors.text }]}>{plan.label}</Text>
+                    {plan.badge && (
+                      <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.badgeText}>{plan.badge}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.planPrice, { color: selected ? colors.primary : colors.text }]}>
+                    {plan.price}
+                  </Text>
+                  <Text style={[styles.planSub, { color: colors.textSub }]}>{plan.sub}</Text>
+                </View>
+                <View style={[
+                  styles.radio,
+                  { borderColor: selected ? colors.primary : colors.border,
+                    backgroundColor: selected ? colors.primary : 'transparent' },
+                ]}>
+                  {selected && <View style={styles.radioDot} />}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </ScrollView>
 
       {/* CTA */}
@@ -126,7 +179,7 @@ export default function PaywallScreen() {
           </View>
         ) : (
           <PrimaryButton
-            label={purchasing ? '処理中...' : `${PRICE_LABEL}で始める`}
+            label={purchasing ? '処理中...' : `${currentPlan.price}で始める`}
             onPress={purchasing ? () => {} : handlePurchase}
           />
         )}
@@ -218,18 +271,65 @@ function makeStyles(c: ColorPalette) {
     featureBody: { flex: 1 },
     featurePremium: { fontFamily: fonts.jp700, fontSize: 15, fontWeight: '700' },
     featureFree: { fontFamily: fonts.jp500, fontSize: 12, marginTop: 2 },
-    price: {
-      fontFamily: fonts.jp800,
-      fontSize: 32,
-      fontWeight: '800',
-      textAlign: 'center',
+    planList: {
+      width: '100%',
+      gap: spacing.sm,
+      marginBottom: spacing['2xl'],
     },
-    priceNote: {
+    planCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderRadius: radius.card,
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    planCardLeft: { flex: 1 },
+    planLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: 2,
+    },
+    planLabel: {
+      fontFamily: fonts.jp700,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    badge: {
+      borderRadius: 99,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    badgeText: {
+      fontFamily: fonts.jp700,
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#fff',
+    },
+    planPrice: {
+      fontFamily: fonts.jp800,
+      fontSize: 20,
+      fontWeight: '800',
+      marginBottom: 2,
+    },
+    planSub: {
       fontFamily: fonts.jp500,
-      fontSize: 12,
-      marginTop: 4,
-      marginBottom: spacing.xl,
-      textAlign: 'center',
+      fontSize: 11,
+    },
+    radio: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#fff',
     },
     cta: {
       paddingHorizontal: spacing.screenH,
